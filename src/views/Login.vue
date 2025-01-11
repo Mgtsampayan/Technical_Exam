@@ -10,6 +10,7 @@
             </button>
         </div>
         <button @click="login">Login</button>
+        <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
     </div>
 </template>
 
@@ -22,6 +23,7 @@ export default {
             username: "",
             password: "",
             showPassword: false,
+            errorMessage: "",
         };
     },
     methods: {
@@ -33,16 +35,23 @@ export default {
             const users = JSON.parse(localStorage.getItem("users")) || [];
             const storedHash = localStorage.getItem(this.username);
 
+            // Log the retrieved values for debugging
+            console.log('Retrieved Username:', this.username);
+            console.log('Retrieved Password Hash:', storedHash);
+
             if (!users.includes(this.username)) {
-                alert("Username does not exist");
+                this.errorMessage = "Username does not exist";
                 return;
             }
 
-            // Hash the entered password
+            // Hash the entered password using SHA-1
             const enteredPasswordHash = CryptoJS.SHA1(this.password).toString();
 
+            // Log the entered password hash for debugging
+            console.log('Entered Password Hash:', enteredPasswordHash);
+
             if (enteredPasswordHash !== storedHash) {
-                alert("Invalid password");
+                this.errorMessage = "Invalid password";
                 return;
             }
 
@@ -53,3 +62,9 @@ export default {
     },
 };
 </script>
+
+<style scoped>
+.error {
+    color: red;
+}
+</style>

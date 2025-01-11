@@ -6,11 +6,11 @@
         <input v-model="password" type="password" placeholder="Password" />
         <input v-model="confirmPassword" type="password" placeholder="Confirm Password" />
         <button @click="saveCredentials">Save</button>
+        <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
     </div>
 </template>
 
 <script>
-import axios from 'axios';
 import CryptoJS from 'crypto-js';
 import { useAuthStore } from '../stores/index';
 
@@ -20,46 +20,50 @@ export default {
             username: '',
             password: '',
             confirmPassword: '',
+            errorMessage: '',
         };
     },
     methods: {
         checkUsername() {
             const existingUsers = JSON.parse(localStorage.getItem('users')) || [];
             if (existingUsers.includes(this.username)) {
-                alert('Username already exists');
+                this.errorMessage = 'Username already exists';
             } else {
-                alert('Username available');
+                this.errorMessage = 'Username available';
             }
         },
         async saveCredentials() {
             if (this.password !== this.confirmPassword) {
-                alert('Passwords do not match');
+                this.errorMessage = 'Passwords do not match';
                 return;
             }
 
             const passwordHash = CryptoJS.SHA1(this.password).toString();
-            const prefix = passwordHash.substring(0, 5);
-            const response = await axios.get(`https://api.pwnedpasswords.com/range/${prefix}`);
-            const pwnedCount = response.data
-                .split('\r')
-                .map((line) => parseInt(line.split(':')[1]))
-                .reduce((a, b) => a + b, 0);
 
-            if (pwnedCount > 100000) {
-                alert('Password is too common');
-                return;
-            }
-
+            // Save the username and password hash to localStorage
             const users = JSON.parse(localStorage.getItem('users')) || [];
             users.push(this.username);
             localStorage.setItem('users', JSON.stringify(users));
+            localStorage.setItem(this.username, passwordHash);
 
+            // Log the stored values for debugging
+            console.log('Stored Username:', this.username);
+            console.log('Stored Password Hash:', passwordHash);
+
+            // Update the auth store (if needed)
             const authStore = useAuthStore();
             authStore.setUsername(this.username);
             authStore.setPasswordHash(passwordHash);
 
+            // Redirect to the login page
             this.$router.push('/login');
         },
     },
 };
 </script>
+
+<style scoped>
+.error {
+    color: red;
+}
+</style>

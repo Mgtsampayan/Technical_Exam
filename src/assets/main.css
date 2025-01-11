@@ -33,3 +33,32 @@ a,
     padding: 0 2rem;
   }
 }
+/* Login Design */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.password-input {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.error {
+  color: red;
+  margin-top: 0.5rem;
+}
+
+button {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
