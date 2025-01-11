@@ -1,55 +1,55 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <template>
-    <div class="login">
-        <h2>Login</h2>
-        <form @submit.prevent="handleSubmit">
-            <div class="form-group">
-                <label for="username">Username:</label>
-                <input id="username" v-model="username" type="text" required>
-            </div>
-
-            <div class="form-group">
-                <label for="password">Password:</label>
-                <div class="password-input">
-                    <input id="password" v-model="password" :type="showPassword ? 'text' : 'password'" required>
-                    <button type="button" @click="showPassword = !showPassword">
-                        {{ showPassword ? 'Hide' : 'Show' }}
-                    </button>
-                </div>
-            </div>
-
-            <button type="submit">Login</button>
-            <p v-if="error" class="error">{{ error }}</p>
-        </form>
+    <div>
+        <h1>Login</h1>
+        <input v-model="username" placeholder="Username" />
+        <div>
+            <input :type="showPassword ? 'text' : 'password'" v-model="password" placeholder="Password" />
+            <button @click="togglePassword">
+                {{ showPassword ? "Hide" : "Show" }}
+            </button>
+        </div>
+        <button @click="login">Login</button>
     </div>
 </template>
 
-<script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import CryptoJS from 'crypto-js'
+<script>
+import CryptoJS from "crypto-js";
 
-const router = useRouter()
-const username = ref('')
-const password = ref('')
-const showPassword = ref(false)
-const error = ref('')
+export default {
+    data() {
+        return {
+            username: "",
+            password: "",
+            showPassword: false,
+        };
+    },
+    methods: {
+        togglePassword() {
+            this.showPassword = !this.showPassword;
+        },
+        login() {
+            // Fetch stored credentials
+            const users = JSON.parse(localStorage.getItem("users")) || [];
+            const storedHash = localStorage.getItem(this.username);
 
-const handleSubmit = () => {
-    const users = JSON.parse(localStorage.getItem('users') || '[]')
-    const user = users.find(u => u.username === username.value)
+            if (!users.includes(this.username)) {
+                alert("Username does not exist");
+                return;
+            }
 
-    if (!user) {
-        error.value = 'Invalid credentials'
-        return
-    }
+            // Hash the entered password
+            const enteredPasswordHash = CryptoJS.SHA1(this.password).toString();
 
-    const hashedPassword = CryptoJS.SHA1(password.value).toString()
-    if (hashedPassword === user.password) {
-        localStorage.setItem('currentUser', username.value)
-        router.push('/home')
-    } else {
-        error.value = 'Invalid credentials'
-    }
-}
+            if (enteredPasswordHash !== storedHash) {
+                alert("Invalid password");
+                return;
+            }
+
+            // Successful login
+            alert(`Welcome, ${this.username}!`);
+            this.$router.push("/home");
+        },
+    },
+};
 </script>

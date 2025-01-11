@@ -1,78 +1,65 @@
 <template>
-    <div class="set-credential">
-        <h2>Set Your Credentials</h2>
-        <form @submit.prevent="handleSubmit">
-            <div class="form-group">
-                <label for="username">Username:</label>
-                <input id="username" v-model="username" type="text" required>
-            </div>
-
-            <div class="form-group">
-                <label for="password">Password:</label>
-                <div class="password-input">
-                    <input id="password" v-model="password" :type="showPassword ? 'text' : 'password'" required>
-                    <button type="button" @click="showPassword = !showPassword">
-                        {{ showPassword ? 'Hide' : 'Show' }}
-                    </button>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="confirmPassword">Confirm Password:</label>
-                <input id="confirmPassword" v-model="confirmPassword" :type="showPassword ? 'text' : 'password'"
-                    required>
-            </div>
-
-            <button type="submit" :disabled="!isValid">Create Account</button>
-            <p v-if="error" class="error">{{ error }}</p>
-        </form>
+    <div>
+        <h1>Set Credentials</h1>
+        <input v-model="username" placeholder="Username" />
+        <button @click="checkUsername">Check Username</button>
+        <input v-model="password" type="password" placeholder="Password" />
+        <input v-model="confirmPassword" type="password" placeholder="Confirm Password" />
+        <button @click="saveCredentials">Save</button>
     </div>
 </template>
 
-<script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
-import CryptoJS from 'crypto-js'
+<script>
+import axios from 'axios';
+import CryptoJS from 'crypto-js';
+import { useAuthStore } from '../stores/index';
 
-const router = useRouter()
-const authStore = useAuthStore()
+export default {
+    data() {
+        return {
+            username: '',
+            password: '',
+            confirmPassword: '',
+        };
+    },
+    methods: {
+        checkUsername() {
+            const existingUsers = JSON.parse(localStorage.getItem('users')) || [];
+            if (existingUsers.includes(this.username)) {
+                alert('Username already exists');
+            } else {
+                alert('Username available');
+            }
+        },
+        async saveCredentials() {
+            if (this.password !== this.confirmPassword) {
+                alert('Passwords do not match');
+                return;
+            }
 
-const username = ref('')
-const password = ref('')
-const confirmPassword = ref('')
-const showPassword = ref(false)
-const error = ref('')
+            const passwordHash = CryptoJS.SHA1(this.password).toString();
+            const prefix = passwordHash.substring(0, 5);
+            const response = await axios.get(`https://api.pwnedpasswords.com/range/${prefix}`);
+            const pwnedCount = response.data
+                .split('\r')
+                .map((line) => parseInt(line.split(':')[1]))
+                .reduce((a, b) => a + b, 0);
 
-const isValid = computed(() => {
-    return username.value &&
-        password.value &&
-        password.value === confirmPassword.value
-})
+            if (pwnedCount > 100000) {
+                alert('Password is too common');
+                return;
+            }
 
-const handleSubmit = async () => {
-    if (!isValid.value) return
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            users.push(this.username);
+            localStorage.setItem('users', JSON.stringify(users));
 
-    if (authStore.isUsernameTaken(username.value)) {
-        error.value = 'Username already taken'
-        return
-    }
+            const authStore = useAuthStore();
+            authStore.setUsername(this.username);
+            authStore.setPasswordHash(passwordHash);
 
-    const isPasswordSafe = await authStore.checkPwnedPassword(password.value)
-    if (!isPasswordSafe) {
-        error.value = 'Password is too common. Please choose a stronger password.'
-        return
-    }
-
-    const hashedPassword = CryptoJS.SHA1(password.value).toString()
-    const users = JSON.parse(localStorage.getItem('users') || '[]')
-
-    users.push({
-        username: username.value,
-        password: hashedPassword
-    })
-
-    localStorage.setItem('users', JSON.stringify(users))
-    router.push('/login')
-}
+            this.$router.push('/login');
+        },
+    },
+};
 </script>
