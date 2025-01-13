@@ -4,12 +4,14 @@
         <div class="welcome-card">
             <h1>Welcome, <span class="username">{{ username }}</span></h1>
             <p class="greeting">Ready to start your day?</p>
+            <button @click="logout">Logout</button> <!-- Add for easy to go into Login page -->
         </div>
     </div>
 </template>
 
 <script>
 import { useAuthStore } from '../stores/index';
+import { useRouter } from 'vue-router';
 
 export default {
     computed: {
@@ -17,6 +19,17 @@ export default {
             const authStore = useAuthStore();
             return authStore.username || 'Guest';
         },
+    },
+
+    setup() {
+      const authStore = useAuthStore();
+      const router = useRouter();
+
+      const logout = () => {
+        authStore.logout();
+        router.push('/login'); // Redirect to Login page after logout
+      };
+      return { logout };
     },
 };
 </script>
@@ -54,5 +67,20 @@ h1 {
 .greeting {
     color: #777;
     font-size: 1.1em;
+}
+/* For LogOut Button */
+.logout-button {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin-top: 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.logout-button:hover {
+    background-color: #c82333;
 }
 </style>
