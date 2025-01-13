@@ -16,5 +16,18 @@ export const useAuthStore = defineStore('auth', {
         setPasswordHash(hash) {
             this.passwordHash = hash;
         },
+
+        // Adding LogOut action
+        logout() {
+          this.otp = '';
+          this.username = '';
+          this.passwordHash = '';
+
+
+          // Clear these information into localStorage, remove it as well
+          localStorage.removeItem('otp');
+          localStorage.removeItem('username');
+          localStorage.removeItem('passwordHash');
+        },
     },
 });
